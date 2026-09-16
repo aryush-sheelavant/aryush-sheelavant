@@ -1,0 +1,35 @@
+name: Update contribution graph SVGs
+ 
+on:
+  schedule:
+    - cron: "0 0 * * *"   # every day at 00:00 UTC
+  workflow_dispatch: {}     # lets you trigger it manually from the Actions tab
+ 
+permissions:
+  contents: write
+ 
+jobs:
+  update-graph:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+ 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+ 
+      - name: Generate SVGs from real contribution data
+        env:
+          GH_USERNAME: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GRAPH_TOKEN }}
+        run: node scripts/generate-graph.mjs
+ 
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/*.svg
+          git diff --cached --quiet || git commit -m "chore: update contribution graph SVGs"
+          git push
